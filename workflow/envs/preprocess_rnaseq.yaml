@@ -10,3 +10,4 @@ dependencies:
   - multiqc==1.27.1
   - bioconda::subread=2.0.8
   - bioconda::fastp=0.24
+  - bioconda::trim-galore
