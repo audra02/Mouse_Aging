@@ -8,7 +8,7 @@ samples = ["SRR5642553", "SRR5642554", "SRR5642555", "SRR5642545", "SRR5642544",
 
 # Reference genome files
 genome_index_dir = "/scratch/lustre/home/aust0075/Mouse_Aging_data/grcm38/genome"
-genome_gff = "/scratch/lustre/home/aust0075/Mouse_Aging_data/grmc38_gff/C57BL_6N.gff3"
+genome_gff = "/scratch/lustre/home/aust0075/Mouse_Aging_data/grmc38_gff"
 
 # Rule all: final target files
 rule all:
