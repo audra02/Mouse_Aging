@@ -1,120 +1,66 @@
-# Snakefile
-
-import pandas as pd
 import os
-
-# Load config and samples
 configfile: "config/config.yaml"
-samples_df = pd.read_csv(config["samples"])
-samples = samples_df["tissue_age_description"].tolist()
 
-# Auto-detect sample groups
+# Sample handling
+samples = list(pd.read_csv(config["samples"])["tissue_age_description"])
 chipseq_samples = [s for s in samples if "K4me3" in s]
 rnaseq_samples = [s for s in samples if "RNA" in s]
 
-# Reference files
-GENOME_FASTA = config["reference"]["fasta"]
-GTF = config["reference"]["gtf"]
-
-# --- Main Workflow ---
 rule all:
     input:
         # ChIP-seq outputs
         expand("results/chipseq/peaks/{sample}_peaks.narrowPeak", sample=chipseq_samples),
-        expand("results/chipseq/bigwig/{sample}.bw", sample=chipseq_samples),
-        
         # RNA-seq outputs
         expand("results/rnaseq/counts/{sample}.counts", sample=rnaseq_samples),
-        "results/multiqc/multiqc_report.html"
+        # QC
+        "results/multiqc_report.html"
 
-# --- Shared Rules ---
-rule download_sra:
-    """
-    Downloads SRA files and converts to FASTQ.
-    Handles both ChIP-seq and RNA-seq samples.
-    """
-    output:
-        "data/raw/{sample}.fastq.gz"
-    params:
-        srx = lambda wc: samples_df.loc[samples_df["tissue_age_description"] == wc.sample, "srx_accession"].iloc[0]
-    log:
-        "logs/download/{sample}.log"
-    threads: 2
-    conda:
-        "envs/sra.yaml"
-    shell:
-        """
-        prefetch {params.srx} -O tmp/ &&
-        fasterq-dump tmp/{params.srx} \
-            --outdir data/raw/ \
-            --skip-technical \
-            --threads {threads} \
-            -o {wildcards.sample}.fastq &&
-        pigz data/raw/{wildcards.sample}.fastq &&
-        rm -rf tmp/{params.srx}
-        """
-
-rule fastqc:
-    input:
-        "data/raw/{sample}.fastq.gz"
-    output:
-        html = "results/qc/{sample}_fastqc.html",
-        zip = "results/qc/{sample}_fastqc.zip"
-    log:
-        "logs/fastqc/{sample}.log"
-    conda:
-        "envs/qc.yaml"
-    shell:
-        "fastqc {input} -o results/qc/"
-
-# --- ChIP-seq Pipeline ---
-rule chipseq_align:
+# --- Core Analysis Rules ---
+rule align_chipseq:
     input:
         fastq = "data/raw/{sample}.fastq.gz",
-        index = f"{config['reference']['bowtie2_index']}.1.bt2"
+        index = config["reference"]["bowtie2_index"] + ".1.bt2"
     output:
-        "results/aligned/{sample}.bam"
-    log:
-        "logs/align/{sample}.log"
+        bam = "results/aligned/{sample}.bam",
+        bai = "results/aligned/{sample}.bam.bai"
     threads: 8
+    resources:
+        mem_mb=16000,
+        runtime=120  # minutes
     conda:
         "envs/chipseq.yaml"
     shell:
         """
         bowtie2 -x {config[reference][bowtie2_index]} \
             -U {input.fastq} \
-            --threads {threads} 2> {log} \
-        | samtools sort -o {output}
-        samtools index {output}
+            --threads {threads} 2> {log} | \
+        samtools sort -@ {threads} -o {output.bam} -
+        samtools index {output.bam}
         """
 
-rule chipseq_call_peaks:
+rule call_peaks:
     input:
-        bam = "results/aligned/{sample}.bam"
+        "results/aligned/{sample}.bam"
     output:
         "results/chipseq/peaks/{sample}_peaks.narrowPeak"
-    log:
-        "logs/macs2/{sample}.log"
+    resources:
+        mem_mb=8000,
+        runtime=60
     conda:
-        "envs/chipseq.yaml"
+        "envs/macs2.yaml"
     shell:
-        """
-        macs2 callpeak -t {input.bam} \
-            -g mm -n {wildcards.sample} \
-            --outdir results/chipseq/peaks/ \
-            {config[chipseq][macs2_params]} > {log} 2>&1
-        """
+        "macs2 callpeak -t {input} -g mm -n {wildcards.sample} --outdir results/chipseq/peaks/"
 
-# --- RNA-seq Pipeline ---
-rule rnaseq_align:
+rule align_rnaseq:
     input:
         fastq = "data/raw/{sample}.fastq.gz",
         index = config["reference"]["star_index"]
     output:
         "results/aligned/{sample}.Aligned.sortedByCoord.out.bam"
-    log:
-        "logs/star/{sample}.log"
-    threads: 8
+    threads: 12
+    resources:
+        mem_mb=32000,
+        runtime=240
     conda:
         "envs/rnaseq.yaml"
     shell:
@@ -122,39 +68,30 @@ rule rnaseq_align:
         STAR --genomeDir {input.index} \
             --readFilesIn {input.fastq} \
             --readFilesCommand zcat \
-            --outSAMtype BAM SortedByCoordinate \
             --runThreadN {threads} \
-            --outFileNamePrefix results/aligned/{wildcards.sample}. \
-            > {log} 2>&1
+            --outSAMtype BAM SortedByCoordinate \
+            --outFileNamePrefix results/aligned/{wildcards.sample}.
         """
 
-rule rnaseq_count:
+# --- Utility Rules ---
+rule fastqc:
     input:
-        bam = "results/aligned/{sample}.Aligned.sortedByCoord.out.bam",
-        gtf = GTF
+        "data/raw/{sample}.fastq.gz"
     output:
-        "results/rnaseq/counts/{sample}.counts"
-    log:
-        "logs/counts/{sample}.log"
-    conda:
-        "envs/rnaseq.yaml"
-    shell:
-        """
-        featureCounts -a {input.gtf} \
-            -o {output} \
-            -T 4 \
-            {input.bam} > {log} 2>&1
-        """
-
-# --- Reporting ---
-rule multiqc:
-    input:
-        expand("results/qc/{sample}_fastqc.zip", sample=samples),
-        expand("logs/macs2/{sample}.log", sample=chipseq_samples),
-        expand("logs/star/{sample}.log", sample=rnaseq_samples)
-    output:
-        "results/multiqc/multiqc_report.html"
+        "results/qc/{sample}_fastqc.html"
+    resources:
+        runtime=30
     conda:
         "envs/qc.yaml"
     shell:
-        "multiqc results/ -o results/multiqc/"
+        "fastqc {input} -o results/qc/"
+
+rule multiqc:
+    input:
+        expand("results/qc/{sample}_fastqc.html", sample=samples)
+    output:
+        "results/multiqc_report.html"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "multiqc results/ -o results/"
