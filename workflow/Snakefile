@@ -2,7 +2,7 @@ import os
 
 # List your sample names (without file extension)
 samples = ["SRX2880744", "SRX2880753", "SRX2880752", "SRX2880736", "SRX2880743", "SRX2880742"]
-input_path = "/scratch/lustre/home/aust0075/Mouse_Aging"
+input_path = "/scratch/lustre/home/aust0075/Mouse_Aging_data"
  
 genome_index_dir = "/scratch/lustre/home/aust0075/Mouse_Aging_data/mm10" 
 
