@@ -1,5 +1,5 @@
 import os
-import panda as pd
+import pandas as pd
 configfile: "config/config.yaml"
 
 # Sample handling
