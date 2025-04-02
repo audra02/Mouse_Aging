@@ -83,7 +83,7 @@ rule hisat2:
     output:
         bam = "results/hisat2/{sample}.bam",
         bai = "results/hisat2/{sample}.bam.bai",
-        stat = "results/hisat2/{sample}.stat"
+        stat = "results/hisat2/{sample}.stat",
         summary = "results/hisat2/{sample}_summary.txt"
     conda: "envs/hisat2_rnaseq.yaml"
     threads: 8
