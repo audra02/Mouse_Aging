@@ -1,10 +1,10 @@
 import os
 
 # List your sample names (without file extension)
-samples = ["SRX2880744", "SRX2880753", "SRX2880752", "SRX2880736", "SRX2880743", "SRX2880742"]
+samples = ["SRR5642553", "SRR5642554", "SRR5642555", "SRR5642545", "SRR5642544", "SRR5642561"]
 input_path = "/scratch/lustre/home/aust0075/Mouse_Aging_data"
  
-genome_index_dir = "/scratch/lustre/home/aust0075/Mouse_Aging_data/mm10" 
+genome_index_dir = "/scratch/lustre/home/aust0075/Mouse_Aging_data/grcm38" 
 
 stages = ["raw", "filtered"]
 
