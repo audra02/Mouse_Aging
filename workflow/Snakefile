@@ -4,7 +4,7 @@ import os
 samples = ["SRX2880744", "SRX2880753", "SRX2880752", "SRX2880736", "SRX2880743", "SRX2880742"]
 input_path = "/scratch/lustre/home/aust0075/Mouse_Aging"
  
-genome_index_dir = "/scratch/lustre/home/aust0075/Mouse_Aging_data/raw_data/mouse_reference/mm10/genome" 
+genome_index_dir = "/scratch/lustre/home/aust0075/Mouse_Aging_data/mm10" 
 
 stages = ["raw", "filtered"]
 
@@ -15,7 +15,7 @@ stages = ["raw", "filtered"]
 import os
 
 # Define input path and output path
-input_path = "/scratch/lustre/home/aust0075/Mouse_Aging_data/raw_data/Mice"
+input_path = "/scratch/lustre/home/aust0075/Mouse_Aging_data/Mice"
 
 # Get the list of sample names
 files_R1 = glob.glob(os.path.join(input_path, "*_1.fastq.gz"))
@@ -23,8 +23,8 @@ samples = sorted(set(os.path.basename(f).replace("_1.fastq.gz", "") for f in fil
 
 print(samples)
 
-genome_index_dir = "/scratch/lustre/home/aust0075/Mouse_Aging_data/references/C57BL_6N/genome"
-genome_gff = "/scratch/lustre/home/aust0075/Mouse_Aging_data/references/C57BL_6N/C57BL_6N.gff3"
+genome_index_dir = "/scratch/lustre/home/aust0075/Mouse_Aging_data/references/genome"
+genome_gff = "/scratch/lustre/home/aust0075/Mouse_Aging_data/references/C57BL_6N.gff3"
 
 # Define the all rule: The final target files
 rule all:
