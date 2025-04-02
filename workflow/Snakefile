@@ -73,6 +73,7 @@ rule trimGalore:
         -q {params.quality} \
         -j {threads} \
         --length {params.length} \
+        --output_dir /scratch/lustre/home/aust0075/Mouse_Aging/results/trim_galore \
         {input.fq1} {input.fq2}
         """
 
