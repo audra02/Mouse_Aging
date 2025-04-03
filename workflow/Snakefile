@@ -35,7 +35,7 @@ rule fastqc:
         html3 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_raw_fastqc.html",
         html4 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_trimmed_fastqc.html",
         zip1 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_raw_fastqc.zip",
-        zip2 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_trimmed_fastqc.zip"
+        zip2 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_trimmed_fastqc.zip",
         zip3 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_raw_fastqc.zip",
         zip4 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_trimmed_fastqc.zip"
     conda: "envs/preprocess_rnaseq.yaml"
