@@ -26,9 +26,9 @@ rule all:
 rule fastqc:
     input:
         fq1 = lambda wildcards: f"{input_path}/{wildcards.sample}_1.fastq.gz",
-        fq2 = lambda wildcards: f"{input_path}/{wildcards.sample}_1_trimmed.fq.gz",
+        fq2 = lambda wildcards: f"{input_path}/{wildcards.sample}_1_val_1.fq.gz",
         fq3 = lambda wildcards: f"{input_path}/{wildcards.sample}_2.fastq.gz",
-        fq4 = lambda wildcards: f"{input_path}/{wildcards.sample}_2_trimmed.fq.gz"
+        fq4 = lambda wildcards: f"{input_path}/{wildcards.sample}_2_val_2.fq.gz"
     output:
         html1 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_raw_fastqc.html",
         html2 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_trimmed_fastqc.html",
