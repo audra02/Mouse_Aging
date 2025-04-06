@@ -1,0 +1,12 @@
+name: chipseq
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - fastqc=0.12.1
+  - bowtie2=2.5.1
+  - samtools=1.17
+  - macs2=2.2.7.1
+  - trim-galore=0.6.10
+  - multiqc=1.14
+  - deeptools=3.5.4

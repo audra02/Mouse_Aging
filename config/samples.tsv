@@ -1,0 +1,5 @@
+sample	tissue_age_description	read1
+SRR1979927	Heart_12m1_K4me3_GATCAG	data/raw/SRR1979927_R1.fastq.gz
+SRR1979930	Heart_12m2_K4me3_TAGCTT	data/raw/SRR1979930_R1.fastq.gz
+SRR1979921	Heart_3m1_K4me3_CAGATC	data/raw/SRR1979921_R1.fastq.gz
+SRR1979925	Heart_3m3_K4me3_ACTTGA	data/raw/SRR1979925_R1.fastq.gz
