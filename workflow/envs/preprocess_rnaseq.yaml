@@ -11,3 +11,5 @@ dependencies:
   - bioconda::subread=2.0.8
   - bioconda::fastp=0.24
   - bioconda::trim-galore
+  - bioconda::bamtools
+  - python=3.8
