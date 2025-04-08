@@ -2,3 +2,5 @@ results
 .snakemake
 slurm-165474.out
 data/raw/
+data/raw/*.fastq.gz
+data/reference/*.bt2
