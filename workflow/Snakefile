@@ -107,8 +107,6 @@ rule multiqc:
     output:
         "/scratch/lustre/home/aust0075/Mouse_Aging/results/multiqc_report.html",
         directory("/scratch/lustre/home/aust0075/Mouse_Aging/results/multiqc_data")
-    log:
-        "logs/multiqc.log"
     conda: "envs/preprocess_rnaseq.yaml"
     shell:
         """
