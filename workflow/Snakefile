@@ -1,6 +1,5 @@
 import glob
 import os
-
 # Define input path
 input_path = "/scratch/lustre/home/aust0075/Mouse_Aging_data"
 
@@ -13,40 +12,15 @@ genome_gff = "/scratch/lustre/home/aust0075/Mouse_Aging_data/grcm38_gff3/Mus_mus
 # Rule all: final target files
 rule all:
     input:
-        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_raw_fastqc.html", sample=samples),
-        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_raw_fastqc.html", sample=samples),
-        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_trimmed_fastqc.html", sample=samples),
-        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_trimmed_fastqc.html", sample=samples),
+        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_fastqc.html", sample=samples),
+        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_fastqc.html", sample=samples),
+        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_val_1_fastqc.html", sample=samples),
+        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_val_2_fastqc.html", sample=samples),
         expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/trim_galore/{sample}_1_val_1.fq.gz", sample=samples),
         expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/trim_galore/{sample}_2_val_2.fq.gz", sample=samples),
         expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/{sample}.bam", sample=samples),
         "/scratch/lustre/home/aust0075/Mouse_Aging/results/counts.txt",
         "/scratch/lustre/home/aust0075/Mouse_Aging/results/multiqc_report.html"
-
-rule fastqc:
-    input:
-        fq1 = lambda wildcards: f"{input_path}/{wildcards.sample}_1.fastq.gz",
-        fq2 = lambda wildcards: f"/scratch/lustre/home/aust0075/Mouse_Aging/results/trim_galore/{wildcards.sample}_1_val_1.fq.gz",
-        fq3 = lambda wildcards: f"{input_path}/{wildcards.sample}_2.fastq.gz",
-        fq4 = lambda wildcards: f"/scratch/lustre/home/aust0075/Mouse_Aging/results/trim_galore/{wildcards.sample}_2_val_2.fq.gz"
-
-    output:
-        html1 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_raw_fastqc.html",
-        html2 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_trimmed_fastqc.html",
-        html3 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_raw_fastqc.html",
-        html4 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_trimmed_fastqc.html",
-        zip1 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_raw_fastqc.zip",
-        zip2 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_trimmed_fastqc.zip",
-        zip3 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_raw_fastqc.zip",
-        zip4 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_trimmed_fastqc.zip"
-    conda: "envs/preprocess_rnaseq.yaml"
-    threads: 4
-    shell:
-        """
-        fastqc -t {threads} --outdir /scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc {input.fq1} {input.fq2} {input.fq3} {input.fq4}
-        mv /scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{wildcards.sample}_fastqc.html {output.html1}
-        mv /scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{wildcards.sample}_fastqc.zip {output.zip1}
-        """
 
 rule trimGalore:
     input:
@@ -69,12 +43,35 @@ rule trimGalore:
         {input.fq1} {input.fq2}
         """
 
+rule fastqc:
+    input:
+        fq1 = lambda wildcards: f"{input_path}/{wildcards.sample}_1.fastq.gz",
+        fq2 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/trim_galore/{sample}_1_val_1.fq.gz",
+        fq3 = lambda wildcards: f"{input_path}/{wildcards.sample}_2.fastq.gz",
+        fq4 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/trim_galore/{sample}_2_val_2.fq.gz"
+
+    output:
+        html1 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_fastqc.html",
+        html2 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_val_1_fastqc.html",
+        html3 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_fastqc.html",
+        html4 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_val_2_fastqc.html",
+        zip1 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_fastqc.zip",
+        zip2 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_val_1_fastqc.zip",
+        zip3 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_fastqc.zip",
+        zip4 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_val_2_fastqc.zip"
+    conda: "envs/preprocess_rnaseq.yaml"
+    threads: 4
+    shell:
+        """
+        fastqc -t {threads} --outdir /scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc {input.fq1} {input.fq2} {input.fq3} {input.fq4}
+        """
+
 rule hisat2:
     input:
         fq1 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/trim_galore/{sample}_1_val_1.fq.gz",
         fq2 = "/scratch/lustre/home/aust0075/Mouse_Aging/results/trim_galore/{sample}_2_val_2.fq.gz"
     output:
-        sam = temp("/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/{sample}.sam"),
+        sam = "/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/{sample}.sam",
         bam = "/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/{sample}.bam",
         bai = "/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/{sample}.bam.bai",
         stat = "/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/{sample}_hisat2.stat"
@@ -82,10 +79,8 @@ rule hisat2:
     threads: 4
     shell:
         """
-        hisat2 -p {threads} -x {genome_index_dir} -1 {input.fq1} -2 {input.fq2} --summary-file {output.stat}
-        
-        samtools view -@ {threads} -bS {output.sam} | samtools sort -@ {threads} -o {output.bam}
-        
+        hisat2 -p {threads} -x {genome_index_dir} --no-unal -1 {input.fq1} -2 {input.fq2} -S {output.sam} --new-summary --summary-file {output.stat}
+        samtools view -@ {threads} -bS {output.sam} | samtools sort -@ {threads} -o {output.bam} 
         samtools index {output.bam}
         """
 
@@ -99,15 +94,15 @@ rule featureCounts:
     threads: 4
     shell:
         """
-        featureCounts -a {genome_gff} -F GTF -t CDS -g Parent -o {output.counts} -s 2 -T {threads} -p --countReadPairs -B {input.bam}
+        featureCounts -a {genome_gff} -F GTF -t CDS -g Parent -o {output.counts} -s 0 -T {threads} -p --countReadPairs -B {input.bam}
         """
         
 rule multiqc:
     input:
-        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_raw_fastqc.zip", sample=samples),
-        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_raw_fastqc.zip", sample=samples),
-        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_trimmed_fastqc.zip", sample=samples),
-        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_trimmed_fastqc.zip", sample=samples),
+        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_fastqc.zip", sample=samples),
+        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_fastqc.zip", sample=samples),
+        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_1_val_1_fastqc.zip", sample=samples),
+        expand("/scratch/lustre/home/aust0075/Mouse_Aging/results/fastqc/{sample}_2_val_2_fastqc.zip", sample=samples),
         "/scratch/lustre/home/aust0075/Mouse_Aging/results/counts.txt.summary"
     output:
         "/scratch/lustre/home/aust0075/Mouse_Aging/results/multiqc_report.html",

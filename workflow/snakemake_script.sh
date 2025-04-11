@@ -7,4 +7,5 @@ source /scratch/lustre/home/aust0075/miniforge3/etc/profile.d/conda.sh
 conda activate snakemake
 
 export PATH=/scratch/lustre/home/aust0075/miniforge3/bin:$PATH
-snakemake -p --use-conda --cores 4
+snakemake --unlock
+snakemake -p --use-conda --cores 4 --rerun-incomplete --rerun-triggers code
