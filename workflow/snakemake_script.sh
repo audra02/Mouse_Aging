@@ -8,4 +8,4 @@ conda activate snakemake
 
 export PATH=/scratch/lustre/home/aust0075/miniforge3/bin:$PATH
 snakemake --unlock
-snakemake -p --use-conda --cores 4 --rerun-incomplete --rerun-triggers code
+snakemake -p --use-conda --cores 4 --rerun-incomplete --rerun-triggers code --forceall

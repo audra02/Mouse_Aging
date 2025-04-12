@@ -32,8 +32,8 @@ rule trimGalore:
     conda: "envs/preprocess_rnaseq.yaml"
     threads: 4
     params:
-        quality = 15,
-        length = 35
+        quality = 25,
+        length = 50
     shell:
         """
         trim_galore --paired -o /scratch/lustre/home/aust0075/Mouse_Aging/results/trim_galore \
@@ -79,7 +79,7 @@ rule hisat2:
     threads: 4
     shell:
         """
-        hisat2 -p {threads} -x {genome_index_dir} --no-unal -1 {input.fq1} -2 {input.fq2} -S {output.sam} --new-summary --summary-file {output.stat}
+        hisat2 -p {threads} -x {genome_index_dir} --no-unal --score-min L,0,-0.6 -1 {input.fq1} -2 {input.fq2} -S {output.sam} --new-summary --summary-file {output.stat}
         samtools view -@ {threads} -bS {output.sam} | samtools sort -@ {threads} -o {output.bam} 
         samtools index {output.bam}
         """
@@ -94,7 +94,7 @@ rule featureCounts:
     threads: 4
     shell:
         """
-        featureCounts -a {genome_gff} -F GTF -t CDS -g Parent -o {output.counts} -s 0 -T {threads} -p --countReadPairs -B {input.bam}
+        featureCounts -a {genome_gff} -F GTF -t CDS -g Parent -o {output.counts} -s 0 -T {threads} -p --countReadPairs -B -O -M --fraction {input.bam}
         """
         
 rule multiqc:
