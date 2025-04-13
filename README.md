@@ -28,6 +28,7 @@ samples:
   - SRR1979925
   - SRR1979927
   - SRR1979930
+
 genome: mm10
 
 Conda environments (see envs/chipseq.yaml)
