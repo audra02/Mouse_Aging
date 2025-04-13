@@ -1,12 +1,12 @@
 reference:
   genome: "mm10"
-  bowtie2_index: "data/reference/bowtie2_index/mm10"
+  bowtie2_index: "scratch/lustre/home/mekl0332/Mouse_Aging/data/reference/bowtie2_index/mm10"
 
 params:
   alignment:
-    bowtie2: "--very-sensitive --no-unal --phred33"
+    bowtie2: "--very-sensitive --no-mixed --no-discordant"
   chipseq:
-    macs2: "--nomodel --extsize 200 --qvalue 0.05 --broad"
-    #blacklist: "data/reference/mm10-blacklist.v2.bed"
+    macs2: "--broad --broad-cutoff 0.1"
+ #blacklist: "data/reference/mm10-blacklist.v2.bed"
 
 samples: "config/samples.tsv"
