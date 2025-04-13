@@ -1,4 +1,0 @@
-KeyError in file /scratch/lustre/home/mekl0332/Mouse_Aging/Snakefile, line 8:
-"None of ['sample'] are in the columns"
-  File "/scratch/lustre/home/mekl0332/Mouse_Aging/Snakefile", line 8, in <module>
-  File "/scratch/lustre/home/mekl0332/miniforge3/envs/snakemake_env/lib/python3.9/site-packages/pandas/core/frame.py", line 6122, in set_index
