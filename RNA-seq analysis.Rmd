@@ -1,0 +1,346 @@
+---
+title: "RNA-seq"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-05-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# RNA-seq analysis
+
+# Objective
+
+We have quantitatively assessed how many read fragments correspond to each gene in each sample and created an expression matrix (count matrix). Now, using this data, we will determine which genes' expression has changed the most between samples.
+
+The available samples: mouse Mus musculus heart cells from two different states of individuals - 3 months old (Young) and 12 months old (Old).
+
+## Preparation for analysis
+
+We will install the missing packages and load all the necessary packages.
+
+```{r}
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install(c("scatterpie", "clusterProfiler", "org.Mm.eg.db"))
+BiocManager::install("biomaRt")
+BiocManager::install("pacman")
+library(pacman)
+p_load(DESeq2, data.table, ggplot2, edgeR, corrplot, pheatmap, EnhancedVolcano, 
+       ggvenn, apeglm, reshape2, clusterProfiler, org.Mm.eg.db, biomaRt, scatterpie, pacman, limma)
+```
+
+## Data
+
+Required data:
+
+1) counts - a matrix of gene quantification (count matrix). 
+
+2) sampleinfo - a table with information about the samples.
+
+### Count matrix
+
+We load our count matrix and check if the data looks good. We also check the number of columns and rows.
+
+```{r}
+countdata <- read.delim("C:/Users/User/Desktop/counts.txt", header = TRUE, comment.char = "#")
+head(countdata)
+ncol(countdata)
+nrow(countdata)
+```
+
+Extracting the SRR numbers of the samples. 
+
+```{r}
+counts <- countdata[, 7:ncol(countdata)]
+colnames(counts)
+rownames(counts) <- countdata[, 1] 
+head(counts)
+#colnames(counts) <- sub(".*SRR", "SRR", colnames(counts))
+colnames(counts) <- sub(".*(SRR[0-9]+)\\.bam", "\\1",
+colnames(counts))
+colnames(counts)
+```
+
+### Sample information
+
+We load the information about the samples (*sampleinfo*) - the sample names and the group they belong to. We check if the sample names in the **sampleinfo** $SampleName column match the sample names in the column names of the **counts** object.
+
+```{r}
+sampleinfo <- read.delim("C:/Users/User/Desktop/SampleInfo.txt")
+sampleinfo
+
+summary(sampleinfo$SampleName %in% colnames(counts)) #ar sutampa stulpeliai
+summary(sampleinfo$SampleName == colnames(counts)) #ar sutampa stulpelių tvarka
+
+counts <- counts[, sampleinfo$SRR] # sudėliojam counts stulpelius tokia tvarka, kaip sampleinfo
+
+summary(colnames(counts) == sampleinfo$SampleName)
+```
+
+### DDS object
+
+At the moment we have: 
+
+-  **counts** with samples in columns and genes in rows
+-  **sampleinfo** with information about the samples, where the order of the samples is the same as in the counts columns
+
+A DESeqDataSet (dds) object is created. The DESeq2 package uses this object to store information about gene expression and samples.
+
+```{r}
+counts <- round(counts)
+dds <- DESeqDataSetFromMatrix(countData = counts,
+                              colData = sampleinfo,
+                              design = ~ Status)
+
+dim(dds)
+colData(dds)
+head(counts(dds))
+```
+
+## Data QC
+
+### Library size
+
+We evaluate whether all libraries are of similar size. 
+
+```{r}
+LibrarySize <- colSums(counts(dds))
+LibrarySize <- as.data.table(LibrarySize, keep.rownames=TRUE)
+LibrarySize
+
+ggplot(LibrarySize, aes(rn, LibrarySize)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = LibrarySize), vjust = -0.5, size = 3) +
+  labs(
+    title = "Sample Library Sizes",
+    x = "Sample ID",
+    y = "Library Size"
+  ) +
+  theme_minimal(base_size = 12)
+```
+We can see that not all libraries are of similar size across the samples - SRR5642555 (Young mice) and SRR5642561 (Young mice) samples have the smalles libraries and SRR5642545 (Old mice) has the largest library.
+
+### Expressed genes list
+
+We also evaluate the number of genes that are expressed on the samples (whose expression is not equal to 0). 
+
+```{r}
+Expressed <- colSums(counts(dds)>0)
+Expressed <- as.data.table(Expressed, keep.rownames = TRUE)
+Expressed 
+
+ggplot(Expressed, aes(rn, Expressed))  +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Expressed), vjust = -0.5, size = 3) +
+  labs(
+    title = "Number of Expressed Genes per Sample",
+    x = "Sample ID",
+    y = "Number of Expressed Genes"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+We can see that in the SRR5642555 sample (Young mice) there is the fewest genes expressed and the most genes expressed is on SRR5642554 sample (Young mice). 
+
+### Strength of gene expression
+
+Now we evaluate whether the overall expression strength is similar across all samples, or if there are any outliers. We use cpm - counts per million - that allows us to assess how similar our samples are overall.
+
+```{r}
+lcpm <- cpm(dds, log=TRUE, normalized.lib.sizes = FALSE)
+head(lcpm)
+
+lcpm <- melt(lcpm)
+head(lcpm)
+
+ggplot(lcpm, aes(value, color=Var2)) +
+  geom_density() + 
+  labs(
+    title = "Density Plot of log-CPM Values",
+    x = "log-CPM",
+    y = "Density",
+    color = "Sample"
+  ) +
+  theme_minimal(base_size = 14)
+
+```
+
+We can see that gene expression strength of SRR564255 and SRR5642561 samples of young mice is slightly different than gene expression strength in the other samples. 
+
+### Data variability
+
+Ideally, the variability between groups (different experimental conditions) should be larger than the variability within groups (technical and biological replicates).
+
+#### PCA
+
+One way to assess the variability between samples is Principal Component Analysis (PCA).
+We will use the *plotPCA* function to create the plot. For this, we need transformed data – we will use the vst (Variance Stabilizing Transformation) transformation.
+
+```{r}
+vsd <- vst(dds)
+
+plotPCA(vsd, intgroup="Status")
+```
+We can see that dots that represent young mice are not grouping nicely together, but we can can see the separation between Young and Old mice samples. 
+
+#### MDS plot
+
+Another similar way to assess the variability between samples is Multidimensional scaling (MDS). MDS focuses on preserving pairwise distances, while PCA focuses on capturing maximum variance in the data.
+
+```{r}
+# Convert Status to factor
+sampleinfo$Status <- factor(sampleinfo$Status)
+
+# Assign colors based on Status
+col.status <- c("blue", "red")[sampleinfo$Status]
+
+# Create MDS plot
+plotMDS(counts, col = col.status, main = "MDS plot based on status")
+legend("topleft",
+       fill = c("blue", "red"),
+       legend = levels(sampleinfo$Status),
+       cex = 0.8)
+
+
+```
+From MDS plot we can also observe the separation between Young and Old mice. However one sample of Young mice (SRR5642554) is grouping more with the samples of Old mice.
+
+## DGE
+
+### Factors and their levels
+
+Checking factor Status and its levels and setting our reference factor - Young mice. Now all samples will be compared against this reference.The DESeq function performs differential expression analysis and includes several functions that can be run separately: it calculates the size factors for the libraries in the dds object, the dispersion, and fits a linear model.
+
+```{r}
+colData(dds)
+dds$Status
+dds$Status <- relevel(dds$Status, ref = "Young")
+dds$Status
+dds <- DESeq(dds)
+colData(dds)
+resultsNames(dds)
+```
+
+### Differential gene expression
+
+Using the DESeq2 package's *lfcShrink* function – this function uses the results function internally but also shrinks the LFC - we create result tables for the comparison. LFC shrinkage takes into account genes with low expression, so small changes in expression sometimes lead to large changes. This avoids false positive results.
+
+In the results table, the most important parameters are the fold change (FC) and reliability (p-value). To assess reliability, we are using the adjusted p-value (adjusted p value, padj).
+
+```{r}
+resOvsY <- lfcShrink(dds, coef="Status_Old_vs_Young")
+resOvsY_table <- as.data.table(resOvsY, keep.rownames = TRUE)
+resOvsY_table
+
+summary(resOvsY_table)
+nrow(resOvsY_table[padj < 0.01])
+nrow(resOvsY_table[abs(log2FoldChange) > 4 & padj < 0.01,])
+
+resOvsY_table[which(resOvsY_table$padj < 0.05), ]
+```
+
+After the gene expression comparison between Young and Old mice, we find that there are 3 genes with statistically significantly altered expression. 
+
+### Visualizations
+
+#### Volcano plot
+
+First, we are visualizing all the genes and comparing the size and reliability of the expression differences we obtained.
+
+Volcano plots are commonly used to display RNA-Seq and other -omics analysis results. It is a scatter plot of Statistical Significance vs. Expression Change (fold change). 
+
+```{r}
+EnhancedVolcano(resOvsY,
+                x = 'log2FoldChange',
+                y = 'padj',
+                lab = rownames(resOvsY),
+                pCutoff = 0.05
+)
+```
+
+According to the Volcano plot, we can see that only two genes has statistically reliable difference in gene expression the expression under adjusted p value. 
+
+## Gene enrichment 
+
+### Extracting the IDs of the transcripts
+
+```{r}
+sig_transcripts <- (resOvsY_table[which(resOvsY_table$padj < 0.05), ])
+sig_transcripts$rn
+transcript_ids <- gsub("transcript:", "", sig_transcripts$rn)
+```
+
+## I variantas
+
+We find that the 2 transcripts with altered expression belong to the Txnip gene and the other transcript belongs to the mt-Cytb gene.
+
+```{r}
+mart <- useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+
+# Map transcript IDs to gene symbols and gene IDs
+mapping <- getBM(
+  attributes = c("ensembl_transcript_id", "ensembl_gene_id", "external_gene_name"),
+  filters = "ensembl_transcript_id",
+  values = transcript_ids,
+  mart = mart
+)
+head(mapping)
+```
+
+### GO enrichment
+
+We perform the GO enrichment analysis and assign genes to their biological function.
+```{r}
+gene_symbols <- unique(mapping$external_gene_name)
+
+ego <- enrichGO(
+  gene = gene_symbols,
+  OrgDb = org.Mm.eg.db,
+  keyType = "SYMBOL",
+  ont = "BP",
+  pAdjustMethod = "BH",
+  qvalueCutoff = 0.05
+)
+dotplot(ego, showCategory = 10)
+```
+
+## II variantas
+
+```{r}
+id_map <- getBM(
+  attributes = c("ensembl_transcript_id", "ensembl_gene_id", "entrezgene_id"),
+  filters = "ensembl_transcript_id",
+  values = transcript_ids,
+  mart = mart
+)
+
+
+id_map <- id_map[!is.na(id_map$entrezgene_id), ]
+entrez_ids <- unique(id_map$entrezgene_id)
+names(entrez_ids) <- entrez_ids 
+
+go <- goana(de = entrez_ids, species = "Mm")
+top_bp <- go[go$Ont == "BP", ]
+top_bp <- top_bp[order(top_bp$P.DE), ]
+top_bp <- head(top_bp, 10)  # top 10 GO BP terms
+
+top_bp$Term <- factor(top_bp$Term, levels = rev(top_bp$Term))
+
+ggplot(top_bp, aes(x = Term, y = -log10(P.DE))) +
+  geom_point(aes(size = DE, color = -log10(P.DE))) +
+  scale_color_gradient(low = "deepskyblue", high = "deeppink") +
+  coord_flip() +
+  labs(
+    x = "GO Biological Process",
+    y = "Gene Ratio",
+    title = "GO Enrichment (BP)",
+    size = "Count",
+    color = "p.adjust"
+  ) +
+  theme_minimal()
+```
+
