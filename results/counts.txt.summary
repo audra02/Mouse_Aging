@@ -1,5 +1,5 @@
 Status	/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/SRR5642553.bam	/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/SRR5642554.bam	/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/SRR5642555.bam	/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/SRR5642545.bam	/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/SRR5642544.bam	/scratch/lustre/home/aust0075/Mouse_Aging/results/hisat2/SRR5642561.bam
-Assigned	2902267	3143639	1422311	3538150	3381835	1529831
+Assigned	4922585	5487390	2626095	6520064	6304748	2630082
 Unassigned_Unmapped	0	0	0	0	0	0
 Unassigned_Read_Type	0	0	0	0	0	0
 Unassigned_Singleton	428200	527632	286115	561940	573038	202614
@@ -10,6 +10,6 @@ Unassigned_Duplicate	0	0	0	0	0	0
 Unassigned_MultiMapping	0	0	0	0	0	0
 Unassigned_Secondary	0	0	0	0	0	0
 Unassigned_NonSplit	0	0	0	0	0	0
-Unassigned_NoFeatures	2390103	2829921	1600037	3634691	3341832	1396552
+Unassigned_NoFeatures	369785	486170	396253	652777	418919	296301
 Unassigned_Overlapping_Length	0	0	0	0	0	0
 Unassigned_Ambiguity	0	0	0	0	0	0

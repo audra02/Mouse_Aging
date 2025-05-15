@@ -8,6 +8,7 @@ samples = ["SRR5642553", "SRR5642554", "SRR5642555", "SRR5642545", "SRR5642544",
 # Reference genome files
 genome_index_dir = "/scratch/lustre/home/aust0075/Mouse_Aging_data/grcm38/genome_index"
 genome_gff = "/scratch/lustre/home/aust0075/Mouse_Aging_data/grcm38_gff3/Mus_musculus.GRCm38.102.gff3"
+genome_gtf = "/scratch/lustre/home/aust0075/Mouse_Aging_data/grcm38_gtf/Mus_musculus.GRCm38.102.gtf"
 
 # Rule all: final target files
 rule all:
@@ -94,7 +95,7 @@ rule featureCounts:
     threads: 4
     shell:
         """
-        featureCounts -a {genome_gff} -F GTF -t CDS -g Parent -o {output.counts} -s 0 -T {threads} -p --countReadPairs -B -O -M --fraction {input.bam}
+        featureCounts -a {genome_gtf} -F GTF -o {output.counts} -s 0 -T {threads} -p --countReadPairs -B -O -M --fraction {input.bam}
         """
         
 rule multiqc:
